@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript | fetch() Method</title>
+</head>
+
+<body>
+    <pre id="result"></pre>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        
+        let fetchRes = fetch("https://norvig.com/big.txt");
+        
+        fetchRes.then(res =>
+            res.text()).then(d => {
+                
+                var obj = {};
+                const resultAll = document.getElementById('result');
+
+                let strStripped = d.replace(/[,().!"\n]/g, "");
+                resultAll.innerHTML = `Text: "${strStripped}"\n`;
+
+                let words = strStripped.toLowerCase().split(' ');
+                
+                let wordCounts = {};
+                words.forEach(word => {
+                    wordCounts[word] = (wordCounts[word] || 0) + 1;
+                });
+                const pickHighest = (obj, num = 1) => {
+                    const requiredObj = {};
+                    if (num > Object.keys(obj).length) {
+                        return false;
+                    };
+                    Object.keys(obj).sort((a, b) => obj[b] - obj[a]).forEach((key, ind) => {
+                        if (ind < num) {
+                            requiredObj[key] = obj[key];
+                        }
+                    });
+                    return requiredObj;
+                };
+                delete wordCounts[''];
+                // result.innerHTML += '\nwordCounts: ' +
+                //     JSON.stringify(wordCounts, null, 2);
+                    resultAll.innerHTML += `\n 'Highest word Counts:' ${JSON.stringify(pickHighest(wordCounts, 10))}\n\n`;
+                let highestRepeated = pickHighest(wordCounts, 10);
+                let objectKeys = Object.keys(pickHighest(wordCounts, 10));
+                if (objectKeys) {
+                    let arr=[];
+                    objectKeys.forEach((word, i) => {
+                        var myHeaders = new Headers();
+                        myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+
+                        var urlencoded = new URLSearchParams();
+                        urlencoded.append("key", "dict.1.1.20170610T055246Z.0f11bdc42e7b693a.eefbde961e10106a4efa7d852287caa49ecc68cf");
+                        urlencoded.append("lang", "en-en");
+                        urlencoded.append("text", word);
+
+                        var requestOptions = {
+                            method: 'POST',
+                            headers: myHeaders,
+                            body: urlencoded,
+                            redirect: 'follow'
+                        };
+                        fetch("https://dictionary.yandex.net/api/v1/dicservice.json/lookup", requestOptions)
+                            .then(response => response.text())
+                            .then(result =>{
+                                let data = JSON.parse(result);
+                                if (data.def) {
+                                    let uniArr = [];
+                                    if(data.def.length===0){
+                                        arr.push({ word: word, count: highestRepeated[word], pos: "", synonyms: uniArr });
+                                    }
+                                    if (data.def[0].pos !== undefined && data.def[0].pos) {
+                                        data.def[0].tr.forEach((item, i) => {
+                                            if (item.syn) {
+                                                item.syn.forEach((item1, i) => {
+                                                    uniArr.push(item1);
+                                                });
+                                            }
+                                        })
+                                        arr.push({ word: word, count: highestRepeated[word], pos: data.def[0].pos, synonyms: uniArr });
+                                    }
+                                }
+                                console.log(arr);
+                            })
+                            .catch(error => console.log(""));
+                    });
+                }
+
+            })
+    </script>
+</body>
+
+</html>
